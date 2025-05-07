@@ -3,7 +3,7 @@ package object Concurrency {
     def log(message: String): Unit =
         println(s"${Thread.currentThread.getName}: $message")
 
-    def thread(body: Unit): Thread =
+    def thread(body: => Unit): Thread =
         val thr = new Thread {
             override def run() = body
         }
