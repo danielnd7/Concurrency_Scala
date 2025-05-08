@@ -1,4 +1,4 @@
-@main
-def main(): Unit = {
-  println("Hello world!")
+object Main extends App {
+    println("hello")
+
 }
