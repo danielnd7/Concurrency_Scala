@@ -9,46 +9,42 @@ object sampling{
     // are available
 
     private val samplesReady = new Semaphore(0, true)
-    private val sampling = new Semaphore(1, true)
     private val mutex = new Semaphore(1, true)
-    private var numSamples = 0
-    private val alreadySampled = new Array[Boolean](3)
+    @volatile private var numSamples = 0
+
+    private val sensorWait = new Array[Semaphore](3)
+    sensorWait.indices.foreach(sensorWait(_) = new Semaphore(1, true))
 
 
 
     def newSample(id:Int) = {
-        sampling.acquire()
+        sensorWait(id).acquire()
         mutex.acquire()
 
-        if (!alreadySampled(id))
+        numSamples += 1
+        log(s"Sensor $id stores its sample" )
 
-            numSamples += 1
-            alreadySampled(id) = true
+        if (numSamples == 3)
+            samplesReady.release()
 
-            log(s"Sensor $id stores its sample" )
-            if (numSamples == 3)
-                samplesReady.release()
 
         mutex.release()
-        sampling.release()
     }
 
     def readSamples() = {
         samplesReady.acquire()
-        sampling.acquire()
-
-        mutex.acquire()
-        numSamples = 0
-        alreadySampled.indices.foreach(alreadySampled(_) = false)
-        mutex.release()
-
         log(s"Worker gathers the three samples")
 
     }
 
     def endWork()={
-        sampling.release()
+        mutex.acquire()
+
+        numSamples = 0
+        sensorWait.indices.foreach(sensorWait(_).release())
         log(s"Worker has finished its tasks")
+
+        mutex.release()
     }
 }
 
